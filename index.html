@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Predict Edge Scanner v3</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#eef2f7;color:#0f172a}
+*{box-sizing:border-box}body{margin:0;background:#eef2f7;padding-bottom:env(safe-area-inset-bottom)}
+header{position:sticky;top:0;z-index:20;background:#0f172a;color:#fff;padding:14px 14px 11px}
+h1{font-size:20px;margin:0}.sub{font-size:11px;opacity:.8;margin-top:3px}
+nav{display:flex;gap:7px;overflow:auto;margin-top:10px;padding-bottom:1px}
+.tab{width:auto;white-space:nowrap;padding:8px 11px;border-radius:999px;border:0;background:#263244;color:white;font-size:12px}.tab.active{background:#fff;color:#0f172a}
+main{max-width:920px;margin:auto;padding:12px}.panel{display:none}.panel.active{display:block}
+.card{background:#fff;border-radius:16px;padding:14px;margin-bottom:11px;box-shadow:0 1px 4px rgba(15,23,42,.08)}
+h2{font-size:16px;margin:0 0 9px}h3{font-size:13px;margin:12px 0 7px}
+label{font-size:11px;font-weight:700;display:block;margin-top:8px;color:#334155}
+input,select,button,textarea{width:100%;font-size:16px;border:1px solid #cbd5e1;border-radius:11px;padding:10px;margin-top:4px;background:#fff}
+button{background:#0f172a;color:#fff;border:0;font-weight:700}.secondary{background:#e2e8f0;color:#0f172a}.tiny{width:auto;font-size:11px;padding:7px 9px;margin:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:620px){.grid4{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}}
+.notice{font-size:12px;line-height:1.45;background:#f8fafc;border-left:4px solid #64748b;padding:9px;border-radius:8px}
+.result{padding:12px 0;border-top:1px solid #e2e8f0}.result:first-child{border-top:0}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.title{font-size:14px;font-weight:800}.meta{font-size:11px;color:#64748b;margin-top:4px;line-height:1.45}
+.big{font-size:25px;font-weight:900}.pill{display:inline-block;padding:5px 8px;background:#e2e8f0;border-radius:999px;font-size:11px;font-weight:800}
+.metric{background:#f8fafc;border-radius:12px;padding:10px}.metric b{display:block;font-size:17px}.metric span{font-size:10px;color:#64748b}
+.pos{color:#166534}.neg{color:#991b1b}.neutral{color:#475569}.amber{color:#92400e}
+.small{font-size:11px;color:#64748b;line-height:1.45}.status{font-size:12px;margin-top:7px}
+table{width:100%;border-collapse:collapse;font-size:11px}th,td{text-align:left;border-bottom:1px solid #e2e8f0;padding:7px 4px}th{color:#475569}
+progress{width:100%;height:9px}.countdown{font-variant-numeric:tabular-nums;font-weight:700}
+.badge{font-size:10px;border-radius:999px;padding:4px 7px;background:#f1f5f9}
+footer{text-align:center;color:#64748b;font-size:10px;padding:8px 20px 28px}
+</style>
+</head>
+<body>
+<header>
+<h1>Predict Edge Scanner v3</h1>
+<div class="sub">Crypto.com Predict • Nadex/CDNA-aware • read-only decision support</div>
+<nav>
+<button class="tab active" data-tab="scanner">Scanner</button>
+<button class="tab" data-tab="analyzer">Analyzer</button>
+<button class="tab" data-tab="scenarios">Scenarios</button>
+<button class="tab" data-tab="watchlist">Watchlist</button>
+<button class="tab" data-tab="journal">Journal</button>
+<button class="tab" data-tab="settings">Settings</button>
+</nav>
+</header>
+
+<main>
+<section id="scanner" class="panel active">
+<div class="card">
+<h2>Market scanner</h2>
+<div class="grid4">
+<div><label>Asset</label><select id="asset"><option value="ethereum">Ethereum</option><option value="bitcoin">Bitcoin</option><option value="crypto">All crypto</option></select></div>
+<div><label>Minimum market band</label><select id="minBand"><option value="90">90–100%</option><option value="80">80–89%</option><option value="70">70–79%</option><option value="60">60–69%</option><option value="50" selected>50–59%</option><option value="0">All</option></select></div>
+<div><label>Max spread (¢)</label><input id="maxSpread" inputmode="decimal" value="10"></div>
+<div><label>Sort</label><select id="sort"><option value="prob">Highest probability</option><option value="spread">Tightest spread</option><option value="expiry">Soonest expiration</option></select></div>
+</div>
+<div class="grid2">
+<div><label>Auto-refresh</label><select id="refresh"><option value="0">Off</option><option value="30">30 sec</option><option value="60" selected>60 sec</option><option value="120">2 min</option></select></div>
+<div><label>Maximum events per scan</label><select id="maxEvents"><option>10</option><option selected>20</option><option>30</option></select></div>
+</div>
+<button id="scanBtn">Scan active markets</button>
+<div id="scanStatus" class="status"></div>
+<div id="rateStatus" class="small"></div>
+</div>
+<div class="card">
+<h2>Results</h2>
+<div class="notice">Scanner percentage = Crypto.com market-implied probability. It is not our independent estimate. Use <b>Analyze</b> to compare a contract against a Nadex/CDNA-based model, transaction cost, and break-even probability.</div>
+<div id="results"><div class="small">No scan yet.</div></div>
+</div>
+</section>
+
+<section id="analyzer" class="panel">
+<div class="card">
+<h2>Independent contract analyzer</h2>
+<div class="notice">Use the applicable live Nadex index or verified CDNA settlement benchmark. Do not substitute the Crypto.com spot quote when the contract settles to Nadex/CDNA.</div>
+<label>Contract title / notes</label><input id="aTitle" placeholder="ETH above $2,500 at 5:00 PM ET">
+<div class="grid2">
+<div><label>YES condition</label><select id="direction"><option value="above">ABOVE strike</option><option value="below">BELOW strike</option></select></div>
+<div><label>Asset</label><select id="aAsset"><option value="ethereum">Ethereum</option><option value="bitcoin">Bitcoin</option></select></div>
+</div>
+<div class="grid4">
+<div><label>Nadex/CDNA index</label><input id="aIndex" inputmode="decimal" placeholder="2512.40"></div>
+<div><label>Strike</label><input id="aStrike" inputmode="decimal" placeholder="2500"></div>
+<div><label>Minutes remaining</label><input id="aMins" inputmode="decimal" placeholder="15"></div>
+<div><label>1-hour vol %</label><input id="aVol" inputmode="decimal" value="0.80"></div>
+</div>
+<h3>Market pricing and costs</h3>
+<div class="grid4">
+<div><label>YES ask (¢)</label><input id="yesAsk" inputmode="decimal" placeholder="78"></div>
+<div><label>YES bid (¢)</label><input id="yesBid" inputmode="decimal" placeholder="75"></div>
+<div><label>Estimated fee (¢)</label><input id="fee" inputmode="decimal" value="1"></div>
+<div><label>Minimum edge (pts)</label><input id="minEdge" inputmode="decimal" value="5"></div>
+</div>
+<h3>Position sizing (optional)</h3>
+<div class="grid3">
+<div><label>Bankroll ($)</label><input id="bankroll" inputmode="decimal" placeholder="1000"></div>
+<div><label>Kelly fraction</label><select id="kellyFrac"><option value="0">Off</option><option value=".25" selected>¼ Kelly</option><option value=".5">½ Kelly</option><option value="1">Full Kelly</option></select></div>
+<div><label>Hard max risk %</label><input id="riskCap" inputmode="decimal" value="2"></div>
+</div>
+<button id="analyzeBtn">Calculate probability, edge & sizing</button>
+<div id="analysisOut" style="margin-top:10px"></div>
+</div>
+
+<div class="card">
+<h2>Settlement checklist</h2>
+<div class="grid2">
+<label><input type="checkbox" class="check" style="width:auto"> Exact expiration time verified</label>
+<label><input type="checkbox" class="check" style="width:auto"> Strike verified</label>
+<label><input type="checkbox" class="check" style="width:auto"> ABOVE/BELOW wording verified</label>
+<label><input type="checkbox" class="check" style="width:auto"> Nadex/CDNA benchmark verified</label>
+<label><input type="checkbox" class="check" style="width:auto"> Bid/ask checked</label>
+<label><input type="checkbox" class="check" style="width:auto"> Fees/spread considered</label>
+</div>
+<div id="checkStatus" class="status"></div>
+</div>
+</section>
+
+<section id="scenarios" class="panel">
+<div class="card">
+<h2>Scenario sensitivity</h2>
+<div class="notice">This shows how your estimated YES probability changes if the index or short-term volatility moves before expiration. It is useful near the strike, where small price changes can materially change the odds.</div>
+<button id="scenarioBtn">Build scenario table from Analyzer</button>
+<div id="scenarioOut" style="margin-top:10px"></div>
+</div>
+</section>
+
+<section id="watchlist" class="panel">
+<div class="card">
+<h2>Saved watchlist</h2>
+<div class="small">Stored only in this browser/device. No account credentials are used.</div>
+<div id="watchItems"></div>
+</div>
+</section>
+
+<section id="journal" class="panel">
+<div class="card">
+<h2>Decision journal</h2>
+<div class="grid3">
+<div><label>Contract</label><input id="jContract"></div>
+<div><label>Side</label><select id="jSide"><option>YES</option><option>NO</option><option>PASS</option></select></div>
+<div><label>Estimated probability %</label><input id="jProb" inputmode="decimal"></div>
+<div><label>Entry price ¢</label><input id="jPrice" inputmode="decimal"></div>
+<div><label>Outcome</label><select id="jOutcome"><option>Open</option><option>Win</option><option>Loss</option><option>Closed early</option></select></div>
+<div><label>P/L $</label><input id="jPL" inputmode="decimal"></div>
+</div>
+<label>Notes</label><textarea id="jNotes" rows="3"></textarea>
+<button id="saveJournal">Save entry</button>
+<div class="grid2" style="margin-top:8px"><button id="exportJournal" class="secondary">Export CSV</button><button id="clearJournal" class="secondary">Clear journal</button></div>
+</div>
+<div class="card">
+<h2>Journal statistics</h2>
+<div id="journalStats" class="grid4"></div>
+<div id="journalTable" style="margin-top:10px"></div>
+</div>
+</section>
+
+<section id="settings" class="panel">
+<div class="card">
+<h2>Settings</h2>
+<label>Crypto.com Predictions API base</label>
+<input id="apiBase" value="https://data-api.crypto.com/api/v1/predictions">
+<div class="small">Public read-only market data. No Crypto.com account login or API key is required.</div>
+<div class="grid3">
+<div><label>Default ETH 1h vol %</label><input id="ethVol" inputmode="decimal" value="0.80"></div>
+<div><label>Default BTC 1h vol %</label><input id="btcVol" inputmode="decimal" value="0.65"></div>
+<div><label>Default minimum edge</label><input id="defaultEdge" inputmode="decimal" value="5"></div>
+</div>
+<label><input id="vibrate" type="checkbox" style="width:auto"> Vibrate while app is open if a 90–100% market-implied contract appears</label>
+<button id="saveSettings">Save settings</button>
+</div>
+<div class="card">
+<h2>10-point probability scale</h2>
+<table><tr><th>Band</th><th>Interpretation</th></tr>
+<tr><td>90–100%</td><td>Very high probability; still not certain</td></tr>
+<tr><td>80–89%</td><td>High</td></tr><tr><td>70–79%</td><td>Moderately high</td></tr><tr><td>60–69%</td><td>Lean</td></tr><tr><td>50–59%</td><td>Slight advantage / near coin flip</td></tr>
+<tr><td>40–49%</td><td>Slightly against</td></tr><tr><td>30–39%</td><td>Low</td></tr><tr><td>20–29%</td><td>Lower</td></tr><tr><td>10–19%</td><td>Very low</td></tr><tr><td>0–9%</td><td>Extremely low</td></tr></table>
+</div>
+</section>
+</main>
+
+<footer>Decision support only. A model can be wrong. Verify contract wording, expiration, benchmark, spread, fees, and maximum loss before trading.</footer>
+
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const num=v=>{let x=parseFloat(v);return Number.isFinite(x)?x:null};
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+function pv(v){let x=parseFloat(String(v??"").replace("%",""));if(!Number.isFinite(x))return null;if(x<=1)x*=100;return clamp(x,0,100)}
+function cv(v){let x=parseFloat(String(v??"").replace(/[¢$%]/g,""));if(!Number.isFinite(x))return null;if(x<=1)x*=100;return clamp(x,0,100)}
+function band(p){if(p==null)return"—";let lo=Math.min(90,Math.floor(clamp(p,0,100)/10)*10);return lo===90?"90–100%":`${lo}–${lo+9}%`}
+function normCdf(x){const t=1/(1+0.2316419*Math.abs(x)),d=.3989423*Math.exp(-x*x/2);let p=1-d*t*(.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return x>=0?p:1-p}
+function est(cur,str,mins,vol,dir){const sig=Math.max(.000001,vol/100)*Math.sqrt(Math.max(.05,mins)/60);let z=Math.log(cur/str)/sig,p=normCdf(z)*100;if(dir==="below")p=100-p;return clamp(p,0,100)}
+function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function fmtTime(ms){if(ms<=0)return"expired";let s=Math.floor(ms/1000),d=Math.floor(s/86400);s%=86400;let h=Math.floor(s/3600);s%=3600;let m=Math.floor(s/60);return d?`${d}d ${h}h ${m}m`:h?`${h}h ${m}m`:`${m}m`}
+function kelly(p,cost){ // p in [0,1], cost in dollars for $1 payout
+  if(cost<=0||cost>=1)return 0;
+  const b=(1-cost)/cost, q=1-p;
+  return clamp((b*p-q)/b,0,1)
+}
+let rows=[], timer=null, lastHeaders={};
+
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll(".tab,.panel").forEach(x=>x.classList.remove("active"));b.classList.add("active");$(b.dataset.tab).classList.add("active");
+ if(b.dataset.tab==="watchlist")renderWatch(); if(b.dataset.tab==="journal")renderJournal();
+});
+async function req(url){
+ const r=await fetch(url,{headers:{"Accept":"application/json"}});
+ lastHeaders={minute:r.headers.get("X-RateLimit-Remaining"),day:r.headers.get("X-RateLimit-Day-Remaining")};
+ if(!r.ok)throw new Error(`HTTP ${r.status}`);
+ return await r.json()
+}
+async function scan(){
+ const base=$("apiBase").value.replace(/\/$/,""), q=$("asset").value, min=+($("minBand").value||0), maxSpr=num($("maxSpread").value), maxE=+($("maxEvents").value||20);
+ $("scanStatus").textContent="Scanning…"; $("results").innerHTML="";
+ try{
+   const sr=await req(`${base}/events/search?q=${encodeURIComponent(q)}&status=active&sort_by=date&limit=50`);
+   const events=sr.data||[]; let out=[];
+   for(const e of events.slice(0,maxE)){
+     let d; try{d=(await req(`${base}/events/${encodeURIComponent(e.id)}`)).data||{}}catch{continue}
+     for(const c of (d.contracts||[])){
+       if(c.status&&c.status!=="active")continue;
+       let pr={};try{pr=(await req(`${base}/contracts/${encodeURIComponent(c.symbol)}/price`)).data||{}}catch{}
+       let p=pv(pr.probability??c.chance),ask=cv(pr.ask),bid=cv(pr.bid),spr=cv(pr.spread);
+       if(p==null)continue;if(spr==null&&ask!=null&&bid!=null)spr=Math.max(0,ask-bid);
+       if(Math.min(90,Math.floor(p/10)*10)<min)continue;if(maxSpr!=null&&spr!=null&&spr>maxSpr)continue;
+       const date=d.event_date||d.end_date||e.event_date||e.end_date||"";
+       out.push({event:e,d,c,pr,p,ask,bid,spr,date});
+     }
+   }
+   const sort=$("sort").value;
+   out.sort((a,b)=>sort==="spread"?(a.spr??999)-(b.spr??999):sort==="expiry"?(new Date(a.date)-new Date(b.date)):b.p-a.p);
+   rows=out;renderResults();
+   $("scanStatus").textContent=`${rows.length} matching contracts • ${new Date().toLocaleTimeString()}`;
+   $("rateStatus").textContent=(lastHeaders.minute||lastHeaders.day)?`API allowance remaining: ${lastHeaders.minute??"?"}/minute • ${lastHeaders.day??"?"}/day`:"";
+   if(rows.some(x=>x.p>=90)&&$("vibrate").checked&&navigator.vibrate)navigator.vibrate([100,70,100]);
+ }catch(e){$("scanStatus").textContent="Scan failed";$("results").innerHTML=`<div class="notice">API request failed (${esc(e.message)}). Analyzer/scenarios/journal remain available. If Safari hosting blocks cross-origin calls, a small server-side proxy is the next upgrade.</div>`}
+ scheduleRefresh();
+}
+function renderResults(){
+ const o=$("results");if(!rows.length){o.innerHTML='<div class="small">Nothing met the filters.</div>';return}
+ o.innerHTML=rows.map((x,i)=>{
+ const exp=x.date&&!isNaN(new Date(x.date))?fmtTime(new Date(x.date)-Date.now()):"expiration unavailable";
+ const be=x.ask!=null?x.ask+((num($("fee").value)||0)):null;
+ return `<div class="result"><div class="row"><div class="title">${esc(x.event.title||x.d.title||"Untitled")}</div><span class="pill">${band(x.p)}</span></div>
+ <div class="row"><div><div class="big">${x.p.toFixed(1)}%</div><div class="small">market-implied</div></div><div class="meta">${x.ask!=null?`ask ${x.ask.toFixed(1)}¢`:""}${x.bid!=null?` • bid ${x.bid.toFixed(1)}¢`:""}${x.spr!=null?` • spread ${x.spr.toFixed(1)}¢`:""}</div></div>
+ <div class="meta">${esc(x.c.title||x.c.symbol)} • <span class="countdown">${esc(exp)}</span></div>
+ <div style="display:flex;gap:7px;margin-top:8px"><button class="tiny" onclick="analyzeRow(${i})">Analyze</button><button class="tiny secondary" onclick="saveWatch(${i})">Save</button></div></div>`
+ }).join("")
+}
+window.analyzeRow=i=>{
+ const x=rows[i],t=(x.event.title||"")+" — "+(x.c.title||x.c.symbol||"");$("aTitle").value=t;
+ $("aAsset").value=/bitcoin|btc/i.test(t)?"bitcoin":"ethereum";$("aVol").value=$("aAsset").value==="bitcoin"?$("btcVol").value:$("ethVol").value;
+ if(x.ask!=null)$("yesAsk").value=x.ask.toFixed(2);if(x.bid!=null)$("yesBid").value=x.bid.toFixed(2);
+ $("direction").value=/below|under|less than/i.test(t)?"below":"above";
+ const m=t.match(/(?:\$|USD\s*)?([0-9]{3,6}(?:\.[0-9]+)?)/i);if(m)$("aStrike").value=m[1].replace(",","");
+ const dt=x.date?new Date(x.date):null;if(dt&&!isNaN(dt)){let mm=(dt-Date.now())/60000;if(mm>0)$("aMins").value=mm.toFixed(1)}
+ document.querySelector('[data-tab="analyzer"]').click();
+}
+window.saveWatch=i=>{let w=load("watchlist",[]),x=rows[i],key=x.c.symbol||x.c.id;if(!w.some(z=>z.key===key))w.unshift({key,title:x.event.title,contract:x.c.title||x.c.symbol,p:x.p,ask:x.ask,bid:x.bid,date:x.date,saved:new Date().toISOString()});save("watchlist",w.slice(0,100));renderWatch()}
+function renderWatch(){let w=load("watchlist",[]),o=$("watchItems");if(!w.length){o.innerHTML='<div class="small">No saved contracts.</div>';return}o.innerHTML=w.map((x,i)=>`<div class="result"><div class="row"><div class="title">${esc(x.title)}</div><span class="pill">${band(x.p)}</span></div><div class="meta">${esc(x.contract)} • ${x.p}% ${x.ask!=null?`• ask ${x.ask}¢`:""} ${x.date?`• ${fmtTime(new Date(x.date)-Date.now())}`:""}</div><button class="tiny secondary" onclick="rmWatch(${i})">Remove</button></div>`).join("")}
+window.rmWatch=i=>{let w=load("watchlist",[]);w.splice(i,1);save("watchlist",w);renderWatch()}
+
+$("analyzeBtn").onclick=()=>{
+ const cur=num($("aIndex").value),str=num($("aStrike").value),mins=num($("aMins").value),vol=num($("aVol").value),ask=num($("yesAsk").value),bid=num($("yesBid").value),fee=num($("fee").value)||0,minEdge=num($("minEdge").value)||5;
+ if([cur,str,mins,vol].some(x=>x==null||x<=0)){ $("analysisOut").innerHTML='<div class="notice">Enter index, strike, minutes remaining and volatility.</div>';return}
+ const p=est(cur,str,mins,vol,$("direction").value),q=100-p;
+ const yesCost=ask!=null?(ask+fee)/100:null,noAsk=bid!=null?100-bid:null,noCost=noAsk!=null?(noAsk+fee)/100:null;
+ const yesEdge=yesCost!=null?p-(yesCost*100):null,noEdge=noCost!=null?q-(noCost*100):null;
+ const best=(yesEdge??-999)>=(noEdge??-999)?"YES":"NO",bestEdge=Math.max(yesEdge??-999,noEdge??-999);
+ let sizing="";
+ const br=num($("bankroll").value),frac=num($("kellyFrac").value)||0,cap=(num($("riskCap").value)||2)/100;
+ if(br&&br>0&&frac>0){
+   const cost=best==="YES"?yesCost:noCost,pp=(best==="YES"?p:q)/100;
+   if(cost!=null){let k=kelly(pp,cost)*frac,r=Math.min(k,cap),dollars=br*r;sizing=`<div class="metric"><b>$${dollars.toFixed(2)}</b><span>suggested max risk (${(r*100).toFixed(2)}% bankroll; capped)</span></div>`}
+ }
+ const verdict=bestEdge>=minEdge?`${best} modeled edge`:"PASS / below edge threshold";
+ $("analysisOut").innerHTML=`<div class="grid4">
+ <div class="metric"><b>${p.toFixed(1)}%</b><span>YES estimate • ${band(p)}</span></div>
+ <div class="metric"><b>${q.toFixed(1)}%</b><span>NO estimate • ${band(q)}</span></div>
+ <div class="metric"><b class="${bestEdge>=minEdge?"pos":"neutral"}">${esc(verdict)}</b><span>best modeled edge ${bestEdge>-900?bestEdge.toFixed(1)+" pts":"—"}</span></div>
+ ${sizing||'<div class="metric"><b>—</b><span>position sizing off</span></div>'}
+ </div>
+ <div class="result"><b>Break-even:</b> YES ${yesCost!=null?(yesCost*100).toFixed(1)+"%":"—"} • NO ${noCost!=null?(noCost*100).toFixed(1)+"%":"—"}<br>
+ <b>Modeled edge:</b> YES ${yesEdge!=null?yesEdge.toFixed(1)+" pts":"—"} • NO ${noEdge!=null?noEdge.toFixed(1)+" pts":"—"}<br>
+ <b>Distance from strike:</b> ${(cur-str>=0?"+":"")+(cur-str).toFixed(2)}<div class="small" style="margin-top:6px">Model assumes log-price movement using the volatility input. Fees, slippage, settlement methodology and late volatility can invalidate the estimate. Kelly sizing is capped by your hard-risk setting and is not a guarantee of safety.</div></div>`;
+}
+
+$("scenarioBtn").onclick=()=>{
+ const cur=num($("aIndex").value),str=num($("aStrike").value),mins=num($("aMins").value),vol=num($("aVol").value),dir=$("direction").value;
+ if([cur,str,mins,vol].some(x=>x==null||x<=0)){ $("scenarioOut").innerHTML='<div class="notice">Fill in the Analyzer first.</div>';return}
+ const priceMoves=[-0.5,-0.25,0,0.25,0.5],volMult=[0.75,1,1.25];
+ let h='<table><tr><th>Index move</th>'+volMult.map(v=>`<th>${Math.round(v*100)}% vol</th>`).join('')+'</tr>';
+ for(const pm of priceMoves){let c=cur*(1+pm/100);h+=`<tr><td>${pm>0?"+":""}${pm}%<br><span class="small">${c.toFixed(2)}</span></td>`+volMult.map(vm=>{let p=est(c,str,mins,vol*vm,dir);return `<td><b>${p.toFixed(1)}%</b><br><span class="small">${band(p)}</span></td>`}).join('')+'</tr>'}
+ h+='</table>';$("scenarioOut").innerHTML=h;
+}
+
+document.querySelectorAll(".check").forEach(c=>c.onchange=()=>{let a=[...document.querySelectorAll(".check")],d=a.filter(x=>x.checked).length;$("checkStatus").textContent=`${d}/${a.length} checks complete${d===a.length?" — ready for final review.":""}`});
+
+$("saveJournal").onclick=()=>{let j=load("journal",[]);j.unshift({time:new Date().toISOString(),contract:$("jContract").value,side:$("jSide").value,prob:$("jProb").value,price:$("jPrice").value,outcome:$("jOutcome").value,pl:$("jPL").value,notes:$("jNotes").value});save("journal",j.slice(0,500));renderJournal()}
+function renderJournal(){
+ const j=load("journal",[]),o=$("journalTable"),s=$("journalStats");
+ const closed=j.filter(x=>["Win","Loss","Closed early"].includes(x.outcome)),wins=closed.filter(x=>x.outcome==="Win").length,pl=closed.reduce((a,x)=>a+(num(x.pl)||0),0);
+ const avgProb=closed.length?closed.reduce((a,x)=>a+(num(x.prob)||0),0)/closed.length:0;
+ s.innerHTML=`<div class="metric"><b>${j.length}</b><span>entries</span></div><div class="metric"><b>${closed.length?wins+"/"+closed.length:"—"}</b><span>wins / closed</span></div><div class="metric"><b>${closed.length?(wins/closed.length*100).toFixed(1)+"%":"—"}</b><span>win rate</span></div><div class="metric"><b class="${pl>=0?"pos":"neg"}">$${pl.toFixed(2)}</b><span>recorded P/L</span></div>`;
+ if(!j.length){o.innerHTML='<div class="small">No journal entries.</div>';return}
+ o.innerHTML='<table><tr><th>Date</th><th>Contract</th><th>Side</th><th>Est.</th><th>Entry</th><th>Outcome</th><th>P/L</th></tr>'+j.map(x=>`<tr><td>${new Date(x.time).toLocaleDateString()}</td><td>${esc(x.contract)}</td><td>${esc(x.side)}</td><td>${esc(x.prob)}%</td><td>${esc(x.price)}¢</td><td>${esc(x.outcome)}</td><td>${esc(x.pl)}</td></tr>`).join('')+'</table>'
+}
+$("exportJournal").onclick=()=>{const j=load("journal",[]),cols=["time","contract","side","prob","price","outcome","pl","notes"],csv=[cols.join(","),...j.map(r=>cols.map(k=>`"${String(r[k]??"").replace(/"/g,'""')}"`).join(","))].join("\n"),a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="predict-journal.csv";a.click();URL.revokeObjectURL(a.href)}
+$("clearJournal").onclick=()=>{if(confirm("Clear all journal entries?")){save("journal",[]);renderJournal()}}
+
+$("saveSettings").onclick=()=>{save("settings",{apiBase:$("apiBase").value,ethVol:$("ethVol").value,btcVol:$("btcVol").value,edge:$("defaultEdge").value,vibrate:$("vibrate").checked});$("minEdge").value=$("defaultEdge").value;$("scanStatus").textContent="Settings saved."}
+function loadSettings(){const s=load("settings",null);if(!s)return;if(s.apiBase)$("apiBase").value=s.apiBase;if(s.ethVol)$("ethVol").value=s.ethVol;if(s.btcVol)$("btcVol").value=s.btcVol;if(s.edge){$("defaultEdge").value=s.edge;$("minEdge").value=s.edge}$("vibrate").checked=!!s.vibrate}
+$("aAsset").onchange=()=>{$("aVol").value=$("aAsset").value==="bitcoin"?$("btcVol").value:$("ethVol").value}
+$("asset").onchange=()=>{$("aAsset").value=$("asset").value==="bitcoin"?"bitcoin":"ethereum";$("aAsset").onchange()}
+$("scanBtn").onclick=scan;$("refresh").onchange=scheduleRefresh;
+function scheduleRefresh(){if(timer)clearTimeout(timer);let s=+($("refresh").value||0);if(s>0)timer=setTimeout(scan,s*1000)}
+setInterval(()=>{if(rows.length)renderResults();if(document.querySelector('[data-tab="watchlist"]').classList.contains("active"))renderWatch()},30000);
+loadSettings();renderWatch();renderJournal();
+if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
+</script>
+</body>
+</html>
