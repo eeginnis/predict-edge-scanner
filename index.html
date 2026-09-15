@@ -245,7 +245,10 @@ async function scan(){
 function renderResults(){
  const o=$("results");if(!rows.length){o.innerHTML='<div class="small">Nothing met the filters.</div>';return}
  o.innerHTML=rows.map((x,i)=>{
- const exp=x.date&&!isNaN(new Date(x.date))?fmtTime(new Date(x.date)-Date.now()):"expiration unavailable";
+ const dt=x.date?new Date(x.date):null;
+ const exp=dt&&!isNaN(dt)
+   ? (dt.getTime()>Date.now()?fmtTime(dt.getTime()-Date.now()):"event date passed")
+   : "expiration unavailable";
  const be=x.ask!=null?x.ask+((num($("fee").value)||0)):null;
  return `<div class="result"><div class="row"><div class="title">${esc(x.event.title||x.d.title||"Untitled")}</div><span class="pill">${band(x.p)}</span></div>
  <div class="row"><div><div class="big">${x.p.toFixed(1)}%</div><div class="small">market-implied</div></div><div class="meta">${x.ask!=null?`ask ${x.ask.toFixed(1)}¢`:""}${x.bid!=null?` • bid ${x.bid.toFixed(1)}¢`:""}${x.spr!=null?` • spread ${x.spr.toFixed(1)}¢`:""}</div></div>
