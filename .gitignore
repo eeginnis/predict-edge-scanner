@@ -1,0 +1,71 @@
+# ============================================================
+# Predict Edge Scanner — local/private files
+# ============================================================
+
+# Historical index.html backups
+index.html.before-*
+index.html.*backup*
+index.html.*BACKUP*
+index.html.*KNOWN-GOOD*
+index.html.*working*
+index.html.v3.22-*
+
+# Explicit legacy backup names
+index.html.v3-backup
+index.html.v3.1-backup
+sw.js.v3-backup
+sw.js.v3.1-backup
+
+# Live/archive/research data
+*.jsonl
+*.csv
+datasets/
+archive/
+archives/
+backups/
+
+# Runtime/log files
+*.log
+*.pid
+
+# Python generated files
+__pycache__/
+*.pyc
+*.pyo
+
+# Editor / OS files
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+
+# Environment / credentials
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# Temporary files
+v322-reference-browser-test.html
+
+# ============================================================
+# Local Python virtual environments
+# ============================================================
+.venv/
+.venv-*/
+venv/
+venv-*/
+
+# ============================================================
+# ALL historical production HTML snapshots
+# Keep locally — never publish
+# ============================================================
+index.html.before-*
+index.html.v3*
+!index.html
+
+
+# Release metadata backups
+*.before-v3.22-release
