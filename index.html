@@ -8529,8 +8529,50 @@ function renderSelectedTradeAnalysis(){
 
         </div>
 
+        <div style="
+          display:grid;
+          grid-template-columns:
+            repeat(3,minmax(0,1fr));
+          gap:8px;
+          margin-top:8px">
+
+          ${["Coinbase","Kraken","Gemini"].map(name=>{
+
+            const source=
+              (v322ReferenceHealthState.sources || [])
+                .find(x=>x.source===name);
+
+            const priceText=
+              source &&
+              source.ok &&
+              Number.isFinite(Number(source.price))
+                ? "$"+Number(source.price).toLocaleString(
+                    undefined,
+                    {
+                      minimumFractionDigits:2,
+                      maximumFractionDigits:2
+                    }
+                  )
+                : "UNAVAILABLE";
+
+            return `
+              <div>
+                <div class="small">
+                  ${escapeHtml(name)}
+                </div>
+                <div>
+                  <b>
+                    ${escapeHtml(priceText)}
+                  </b>
+                </div>
+              </div>
+            `;
+          }).join("")}
+
+        </div>
+
         <div class="small"
-             style="margin-top:6px">
+             style="margin-top:8px">
 
           <b>Crypto.com vs consensus:</b>
           ${escapeHtml(referenceCryptoDeltaText)}
