@@ -212,12 +212,13 @@ footer{text-align:center;color:#64748b;font-size:10px;padding:8px 20px 28px}
          style="margin-top:8px;padding:8px;
                 border:1px solid #d9e1ea;border-radius:6px">
       <b>Current v3.22 research status:</b>
-      Market-probability recalibration remains promising for further
-      testing. Signed strike distance has not demonstrated incremental
-      predictive value beyond recalibration in the current controlled
-      sample. The current evidence contains only seven independent
-      controlled settlement targets, all from the same day, so no
-      fitted v3.22 model or high-confidence trade signal is enabled.
+      The frozen strike-aware v3.22 probability model is deployed for
+      research and decision support. It was fitted only on the 261-row
+      historical canonical training population; prospective observations
+      were not used for fitting. Frozen prospective replay scored 400 of
+      417 observations, with 89.5% directional accuracy and a 0.077084
+      Brier score. These results are validation evidence, not a
+      high-confidence trade signal.
     </div>
 
     <div id="v321DiagnosticPanel"
@@ -2052,8 +2053,9 @@ function renderStrikeAwareDataset(){
            padding-top:8px;
            border-top:1px solid #e5e7eb">
 
-      Research dataset only — no fitted v3.22 prediction model is deployed
-      from these rows in v3.21.
+      Historical strike-aware research dataset. These rows support
+      diagnostics and historical analysis; they do not refit or modify
+      the frozen v3.22 probability model.
 
     </div>
   `;
