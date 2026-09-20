@@ -5964,8 +5964,42 @@ function paperV322Observation(row,horizon){
       probability<=5
     );
 
+  /*
+    v3.23 prospective final-model evidence.
+
+    Evaluate the already-frozen v3.22 model AT CAPTURE TIME.
+    This is logging instrumentation only and does not alter
+    the probability model or its production calculations.
+  */
+
+  const capturedAt=row?.capturedAt||null;
+  const strike=Number(row?.strike);
+  const eth=Number(row?.ethReferencePrice);
+
+  let frozenModelResult=null;
+
+  if(
+    capturedAt &&
+    Number.isFinite(strike) &&
+    strike>0 &&
+    Number.isFinite(eth) &&
+    eth>0 &&
+    Number.isFinite(Number(horizon))
+  ){
+    frozenModelResult=
+      v322EvaluateProbability(
+        capturedAt,
+        strike,
+        Number(horizon),
+        eth
+      );
+  }
+
+  const fitted=
+    frozenModelResult?.valid===true;
+
   return {
-    schemaVersion:"v3.22-paper-1",
+    schemaVersion:"v3.23-paper-1",
     paperOnly:true,
     trainingEligible:false,
 
@@ -6042,8 +6076,110 @@ function paperV322Observation(row,horizon){
 
     highConfidenceThresholdPercent:95,
 
-    fittedV322Probability:null,
-    fittedV322ModelDeployed:false,
+    // Actual frozen v3.22 result recorded at capture time.
+    fittedV322ModelDeployed:true,
+
+    fittedV322EvaluationValid:
+      fitted,
+
+    fittedV322EvaluationReason:
+      fitted
+        ? "OK"
+        : (
+            frozenModelResult?.reason ||
+            "INPUTS UNAVAILABLE"
+          ),
+
+    fittedV322EvaluatedAt:
+      capturedAt,
+
+    fittedV322ModelId:
+      "v3.22-frozen-261-logistic",
+
+    fittedV322Probability:
+      fitted &&
+      Number.isFinite(
+        Number(frozenModelResult.v322Probability)
+      )
+        ? Number(frozenModelResult.v322Probability)
+        : null,
+
+    fittedV322ProbabilityPercent:
+      fitted &&
+      Number.isFinite(
+        Number(frozenModelResult.v322ProbabilityPercent)
+      )
+        ? Number(frozenModelResult.v322ProbabilityPercent)
+        : null,
+
+    fittedV322Logit:
+      fitted &&
+      Number.isFinite(
+        Number(frozenModelResult.v322Logit)
+      )
+        ? Number(frozenModelResult.v322Logit)
+        : null,
+
+    fittedV322StandardizedFeatures:
+      fitted &&
+      Array.isArray(
+        frozenModelResult.v322StandardizedFeatures
+      )
+        ? [...frozenModelResult.v322StandardizedFeatures]
+        : null,
+
+    strike:
+      Number.isFinite(strike)
+        ? strike
+        : null,
+
+    normalizedDistance:
+      fitted &&
+      Number.isFinite(Number(frozenModelResult.normalizedDistance))
+        ? Number(frozenModelResult.normalizedDistance)
+        : null,
+
+    momentum1m:
+      fitted &&
+      Number.isFinite(Number(frozenModelResult.momentum1m))
+        ? Number(frozenModelResult.momentum1m)
+        : null,
+
+    momentum5m:
+      fitted &&
+      Number.isFinite(Number(frozenModelResult.momentum5m))
+        ? Number(frozenModelResult.momentum5m)
+        : null,
+
+    momentum15m:
+      fitted &&
+      Number.isFinite(Number(frozenModelResult.momentum15m))
+        ? Number(frozenModelResult.momentum15m)
+        : null,
+
+    momentum30m:
+      fitted &&
+      Number.isFinite(Number(frozenModelResult.momentum30m))
+        ? Number(frozenModelResult.momentum30m)
+        : null,
+
+    volatility15m:
+      fitted &&
+      Number.isFinite(Number(frozenModelResult.volatility15m))
+        ? Number(frozenModelResult.volatility15m)
+        : null,
+
+    distancePercent:
+      fitted &&
+      Number.isFinite(Number(frozenModelResult.distancePercent))
+        ? Number(frozenModelResult.distancePercent)
+        : null,
+
+    expectedMove:
+      fitted &&
+      Number.isFinite(Number(frozenModelResult.expectedMove))
+        ? Number(frozenModelResult.expectedMove)
+        : null,
 
     settlementResult:
       row?.settlementResult??null,
@@ -6455,6 +6591,13 @@ function captureRows(sourceRows=rows,ethReference=latestEthReference){
       event:x.event.title||x.d.title||"",
       contract:x.c.title||x.c.symbol||"",
       symbol:x.c.symbol||x.c.id||"",
+
+      // v3.23 prospective-model logging:
+      // preserve the production strike interpretation.
+      strike:
+        Number.isFinite(selectedTradeStrike(x))
+          ? selectedTradeStrike(x)
+          : null,
 
       probability:x.p,
 
